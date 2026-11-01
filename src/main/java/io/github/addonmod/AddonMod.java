@@ -37,6 +37,7 @@ public class AddonMod
     public static void preInit(FMLPreInitializationEvent event)
     {
         proxy.preInit(event);
+        ModPlanets.init();
     }
 
     @EventHandler
