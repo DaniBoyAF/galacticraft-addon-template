@@ -1,8 +1,14 @@
-plugins {
-	id "net.galacticraft.addon"
-	id "net.galacticraft.tokenizer" version "1.0.0"
-}
 
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net/' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
+    }
+}
+apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 
@@ -12,42 +18,18 @@ archivesBaseName = mod_id
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 
-compileJava {
-    options.encoding = "UTF-8"
-}
-
-
-galacticraft {
-	// Pulls the latest release version of Galacticraft from maven
-	latestRelease()
-	
-	// Or use the latest snapshot version
-	// useLatestSnapshot()
-	
-	// you can also specify the exact version to pull from maven
-	// NOTE: Make sure the version exists, you can view all available
-	// versions by running the 'listAvailableVersions' task
-	// gcVersion('4.0.2.284')
-}
-
 minecraft {
-
     mappings channel: mappings_channel, version: mappings_version
     runs {
         client {
             workingDirectory project.file('run/client')
-
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
-
         }
-
         server {
             workingDirectory project.file('run/server')
-
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
-
             mods {
                 "${mod_id}" {
                     source sourceSets.main
@@ -57,60 +39,33 @@ minecraft {
     }
 }
 
+repositories {
+    mavenCentral()
+    maven { url = "https://cursemaven.com" } // Seguro para baixar o Galacticraft
+}
+
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    implementation fg.deobf("curse.maven:galacticraft-legacy-564236:4399905")
+}
+
+// Correção do bug do MergeTool para 1.12.2
+configurations.configureEach {
+    exclude group: "net.minecraftforge", module: "mergetool"
 }
 
 jar {
     manifest {
         attributes([
-                'Specification-Title': mod_id,
-                'Specification-Vendor': "ExampleDev",
-                'Specification-Version': '1', // We are version 1 of ourselves
-                'Implementation-Title': project.name,
-                'Implementation-Version': mod_version,
-                'Implementation-Vendor': "ExampleDev",
-                'Implementation-Timestamp': new Date().format('yyyy-MM-dd\'T\'HH:mm:ssZ')
+            'Specification-Title': mod_id,
+            'Specification-Vendor': "ExampleDev",
+            'Specification-Version': '1',
+            'Implementation-Title': project.name,
+            'Implementation-Version': mod_version,
+            'Implementation-Vendor': "ExampleDev",
+            'Implementation-Timestamp': new Date().format('yyyy-MM-dd\'T\'HH:mm:ssZ')
         ])
     }
 }
 
-def infoMap = [
-		mod_id: mod_id, 
-		mod_name: mod_name, 
-		mod_version: mod_version,
-        mod_authors: mod_authors, 
-        mod_description: mod_description.replace('\n', '\\n'), 
-        minecraft_version: minecraft_version
-]
-
-def mcmetaMap = [mod_id: mod_id]
-
-def javaMap = [
-    	mod_id: mod_id, 
-		mod_name: mod_name,
-		mod_version: mod_version,
-		forge_version: forge_version,
-		gc_version: extensions.galacticraft.getVersion()
-]
-
-tokens {
-	replaceIn("mcmod.info", infoMap)
-    replaceIn("pack.mcmeta", mcmetaMap)
-    replaceIn("Reference.java", javaMap)
-}
-
 jar.finalizedBy('reobfJar')
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            artifact jar
-        }
-    }
-    repositories {
-        maven {
-            url "file://${project.projectDir}/mcmodsrepo"
-        }
-    }
-}
